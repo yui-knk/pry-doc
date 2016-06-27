@@ -44,13 +44,11 @@ class Pry
     #   must figure out a better way to distinguish between class methods and
     #   instance methods.
     def self.receiver_notation_for(meth)
-      # match = meth.inspect.match(/\A#<(?:Unbound)?Method: (.+)([#\.].+)>\z/)
-      # owner = meth.owner.to_s.sub(/#<.+?:(.+?)>/, '\1')
-      # name = match[2]
-      # name.sub!('#', '.') if match[1] =~ /\A#<Class:/
-      owner = meth.owner.to_s
-      name = meth.name.to_s
-      "#{owner}##{name}"
+      match = meth.inspect.match(/\A#<(?:Unbound)?Method: (.+)([#\.].+)(?:\(.+\))?>\z/)
+      owner = meth.owner.to_s.sub(/#<.+?:(.+?)>/, '\1')
+      name = match[2]
+      name.sub!('#', '.') if match[1] =~ /\A#<Class:/
+      owner + name
     end
 
     # Retrives aliases of a method
@@ -60,7 +58,7 @@ class Pry
     def self.aliases(meth)
       host        = meth.owner
       method_type = :instance_method
-      methods = host.instance_methods
+      methods = (host.instance_methods + host.private_instance_methods).uniq
 
       methods.select { |m| host.send(method_type, m.to_s) == host.send(method_type, meth.name) }.
               reject { |m| m.to_s == meth.name.to_s }.
